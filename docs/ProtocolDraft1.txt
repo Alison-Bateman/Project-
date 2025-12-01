@@ -1,0 +1,99 @@
+##Download Toolkits/Programs: 
+###SRA Toolkit: 
+set of command-line programs from NCBI for working with data in the Sequence Read Archive (SRA). The most useful tools are:
+
+`prefetch` – downloads runs (SRR/ERR/DRR) reliably with resume/retry and checksums.
+
+`fasterq-dump` – converts an SRA run to FASTQ, optionally splitting into _1/_2 for paired-end.
+
+`vdb-validate` – verifies file integrity.
+
+(Others exist, e.g., sam-dump, vdb-config)
+
+Command to install SRA Toolkit: 
+```bash 
+# 1) Download a prebuilt SRA Toolkit
+curl -L -o sratoolkit.tar.gz \
+  https://ftp-trace.ncbi.nlm.nih.gov/sra/sdk/3.2.1/sratoolkit.3.2.1-ubuntu64.tar.gz
+
+# 2) Unpack the archive
+tar -xzf sratoolkit.tar.gz
+tooldir=$(find . -maxdepth 1 -type d -name "sratoolkit.*")
+export PATH="$PWD/$tooldir/bin:$PATH"
+#To prevent having to reexport everytime use: 
+export PATH="/fs/scratch/PAS2880/sratoolkit.3.2.1-ubuntu64/bin:$PATH"
+
+#curl → command-line HTTP/FTP client to fetch URLs.
+#-L → “follow redirects.” If the URL responds with a redirect (3xx), curl follows it to the final file.
+#-o sratoolkit.tar.gz →  write the downloaded bytes to a file named sratoolkit.tar.gz 
+#tar = extract archives
+#-x extract, -z gunzip, -f file name follows
+#Result: a new folder like sratoolkit.3.1.1-ubuntu64/ appears in your current directory.
+
+# 3) Verify it’s available
+fasterq-dump --version
+```
+###NCBI Datasets command-line tools
+```bash
+#Installed using guide at https://www.ncbi.nlm.nih.gov/datasets/docs/v2/command-line-tools/download-and-install/
+#Download datasets: 
+curl -o datasets 'https://ftp.ncbi.nlm.nih.gov/pub/datasets/command-line/v2/linux-amd64/datasets'
+#Download dataformat: 
+curl -o dataformat 'https://ftp.ncbi.nlm.nih.gov/pub/datasets/command-line/v2/linux-amd64/dataformat'
+Make them executable: chmod +x datasets dataformat
+```
+###Downloading Bioperl 
+
+
+
+## Download data
+```bash
+### Download the raw run with accession SRR1555696 from NCBI and convert to fastq and split mates
+ # 1) Download the run (https://trace.ncbi.nlm.nih.gov/Traces/?view=run_browser&acc=SRR1555696&display=metadata)
+prefetch -O fastq SRR1555696  
+# 2) Convert to FASTQ and split mates
+fasterq-dump --split-files --threads 8 -O fastq/ SRR1555696
+# yields fastq/SRR1555696_1.fastq and fastq/SRR1555696_2.fastq
+# 3) Compress files 
+gzip fastq/SRR1555696_1.fastq fastq/SRR1555696_2.fastq 
+# yields fastq/SRR1555696_1.fastq.gz and fastq/SRR1555696_2.fastq.gz
+# 4) Validate file integrity
+vdb-validate fastq/ SRR1555696
+```
+Validation output: 
+```bash
+2025-11-12T02:10:22 vdb-validate.3.2.1 info: Table 'SRR1555696.sra' metadata: md5 ok
+2025-11-12T02:10:22 vdb-validate.3.2.1 info: Column 'ALTREAD': md5 ok
+2025-11-12T02:10:28 vdb-validate.3.2.1 info: Column 'QUALITY': md5 ok
+2025-11-12T02:10:31 vdb-validate.3.2.1 info: Column 'READ': md5 ok
+2025-11-12T02:10:32 vdb-validate.3.2.1 info: Column 'X': md5 ok
+2025-11-12T02:10:32 vdb-validate.3.2.1 info: Column 'Y': md5 ok
+2025-11-12T02:10:32 vdb-validate.3.2.1 info: Table 'SRR1555696.sra' is consistent
+```
+###Download the Reference Genome 
+
+###Convert GFF to GTF
+
+
+###FASTQC and MULTIQC
+
+
+###Observe the fastqc reports: 
+##Read 1
+Read 1: [PASS]Basic Statistics 
+[PASS]Per base sequence quality 
+[FAIL]Per tile sequence quality 
+[PASS]Per sequence quality scores 
+[WARNING]Per base sequence content 
+[PASS]Per sequence GC content 
+[WARNING]Per base N content 
+[PASS]Sequence Length Distribution 
+[WARNING]Sequence Duplication Levels 
+[PASS]Overrepresented sequences 
+PASS]Adapter Content 
+
+These are the concerns: 
+[FAIL]Per tile sequence quality 
+[WARNING]Per base sequence content 
+[WARNING]Per base N content 
+[WARNING]Sequence Duplication Levels

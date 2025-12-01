@@ -1,0 +1,58 @@
+#!/bin/bash
+#SBATCH --account=PAS2880
+#SBATCH --cpus-per-task=16
+#SBATCH --mail-type=FAIL
+#SBATCH --output=slurm-star_index-%j.out
+#SBATCH --mem=160G
+#SBATCH --time=24:00:00
+set -euo pipefail
+
+# Constants
+STAR_CONTAINER=oras://community.wave.seqera.io/library/star:2.7.11b--84fcc19fdfab53a4
+
+# Copy the placeholder variables
+fasta=ref/figshare/HelTub_1.0.fn
+gtf=ref/gtf/HelTub_1.0.gtf
+outdir=ref/index/logs
+
+# Initial logging
+echo "# Starting script star_index.sh"
+date
+echo "# Input assembly FASTA file:      $fasta"
+echo "# Input annotation GTF file:      $gtf"
+echo "# Output dir:                     $outdir"
+echo
+
+# Create the output dir (with a subdir for Slurm logs)
+mkdir -p ref/index
+mkdir -p ref/index/logs
+
+# Run STAR
+apptainer exec "$STAR_CONTAINER" STAR \
+    --runMode genomeGenerate \
+    --genomeFastaFiles "$fasta" \
+    --sjdbGTFfile "$gtf" \
+    --sjdbOverhang 99 \
+    --genomeSAindexNbases 14 \
+    --genomeDir "$outdir" \
+    --runThreadN 16
+
+# Explanation of key options:
+#   --runMode genomeGenerate
+#       Build a genome index instead of aligning reads.
+#   --runThreadN 16
+#       Match Slurm's --cpus-per-task (STAR uses 16 threads).
+#   --sjdbOverhang
+#       Set to max read length - 1. For ~100 bp reads, 99.
+#   --genomeSAindexNbases
+#       Controls suffix array depth (speed vs RAM).
+#       Default ≈ min(14, log2(genome_length)/2 - 1).
+#       For ~10.5 Gb genome, that gives ~15.5 → capped to 14,
+#       but 14 can spike RAM on huge plant genomes, so we use 13
+#       to reduce memory pressure with minimal performance cost.
+# Final logging
+echo
+echo "# Used STAR version:"
+apptainer exec "$STAR_CONTAINER" STAR --version
+echo "# Successfully finished script star_index.sh"
+date
