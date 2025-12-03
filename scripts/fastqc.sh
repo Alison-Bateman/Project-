@@ -1,3 +1,4 @@
+{bash}
 #!/bin/bash
 #SBATCH --account=PAS2880
 #SBATCH --cpus-per-task=4
@@ -11,28 +12,31 @@ set -euo pipefail
 # Load the OSC module for FastQC
 module load fastqc/0.12.1
 
-# Positional arguments: input files
-fastq_file=$1
+# Positional arguments:
+FASTQ_DIR=$1
+FASTQC_OUT_DIR=$2
 
-# Output base directory
-OUT=/fs/ess/PAS2880/users/bateman139/project/data
+for fastq_file in $FASTQ_DIR=*fastq.gz; do
 
 # Initial logging
 echo "Starting script fastqc.sh"
 date
 echo "Input FASTQ file:  $fastq_file"
-echo "Output dir:         $OUT/fastqc"
+echo "Output dir:         $FASTQC_OUT_DIR"
 echo
 
 # Create the output dir (with a subdir for Slurm logs)
-mkdir -p "$OUT/fastqc"
+mkdir -p "$FASTQC_OUT_DIR"
 
 # Run FastQC
 fastqc \
     --threads 4 \
-    --outdir "$OUT/fastqc" \
+    --outdir "$FASTQC_OUT_DIR" \
     $fastq_file
 
-# Final logging
+#Finished sample logging
 echo "Finished fastqc.sh on $fastq_file" 
 date
+done 
+# Final logging
+echo "Script complete"

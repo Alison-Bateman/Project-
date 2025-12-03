@@ -4,7 +4,6 @@
 #SBATCH --cpus-per-task=8
 #SBATCH --time=01:00:00
 #SBATCH --mem=8G
-#SBATCH --output=slurm-fastp-%j.out
 
 set -euo pipefail
 
@@ -13,14 +12,15 @@ echo "Starting script"
 
 run_date=$(date +%m%d)
 
-# Define output directories
-TRIM_DIR=data/trimmed
-FASTP_REPORT_DIR=data/trimmed/fastp_reports
+# Positional arguments:
+FASTQ_DIR=$1
+TRIM_DIR=$2
+FASTP_REPORT_DIR=$TRIM_DIR/fastp_report
 
 # Create directories automatically
 mkdir -p "$TRIM_DIR" "$FASTP_REPORT_DIR"
 
-for R1 in data/fastq/*_1.fastq.gz; do
+for R1 in $FASTQ_DIR/*_1.fastq.gz; do
     # Define paired-end R2 read
     R2=${R1/_1.fastq.gz/_2.fastq.gz}
 
@@ -29,15 +29,7 @@ for R1 in data/fastq/*_1.fastq.gz; do
     sample=${R1##*/}
     sample=${sample%_1.fastq.gz}
 
-    # Run fastp inside Apptainer
-    # -i/-I: input reads
-    # -o/-O: trimmed outputs (date-stamped)
-    # --cut_tail* : 3' quality trimming with 4-bp window at Q20
-    # -n 5: discard reads with >5 Ns
-    # -l 50: discard reads shorter than 50 bp after trimming
-    # --detect_adapter_for_pe: safe adapter detection
-    # -h/-j: HTML/JSON reports (date-stamped)
-    # --thread 8: use 8 threads
+   
     apptainer exec \
       oras://community.wave.seqera.io/library/fastp:1.0.1--a5a7772c43b5ebcb \
       fastp \
@@ -54,12 +46,20 @@ for R1 in data/fastq/*_1.fastq.gz; do
       -h "${FASTP_REPORT_DIR}/${sample}_${run_date}.html" \
       -j "${FASTP_REPORT_DIR}/${sample}_${run_date}.json" \
       --thread 8
-
+ # Run fastp inside Apptainer
+    # -i/-I: input reads
+    # -o/-O: trimmed outputs (date-stamped)
+    # --cut_tail* : 3' quality trimming with 4-bp window at Q20
+    # -n 5: discard reads with >5 Ns
+    # -l 50: discard reads shorter than 50 bp after trimming
+    # --detect_adapter_for_pe: safe adapter detection
+    # -h/-j: HTML/JSON reports (date-stamped)
+    # --thread 8: use 8 threads
 done
 echo "Completed trimming"
 # Run FastQC on trimmed FASTQ files
 echo "starting fastqc"
-FASTQC_DIR=data/trimmed/fastqc
+FASTQC_DIR=$TRIM_DIR/fastqc
 
 mkdir -p "$FASTQC_DIR" 
 
@@ -67,18 +67,18 @@ module load fastqc/0.12.1
 fastqc \
     --threads 8 \
     --outdir "$FASTQC_DIR" \
-    data/trimmed/*"${run_date}"*.trimmed.fastq.gz
+    $TRIM_DIR/*"${run_date}"*.trimmed.fastq.gz
 echo 'Finshed Fastqc'
 #Run MultiQC on FastQC files
 echo 'Starting MultiQC'
-MULTIQC_DIR=data/trimmed/multiqc
+MULTIQC_DIR=$TRIM_DIR/multiqc
 
 mkdir -p "$MULTIQC_DIR"
 
 apptainer exec \
   oras://community.wave.seqera.io/library/multiqc:1.31--e111a2e953475c51 \
   multiqc \
-  data/trimmed \
+  $TRIM_DIR \
   --outdir "$MULTIQC_DIR"
 echo 'Finsihed MutliQC'
 #Final Logging 

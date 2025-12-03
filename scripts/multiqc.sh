@@ -2,37 +2,47 @@
 #SBATCH --account=PAS2880
 #SBATCH --mail-type=FAIL
 #SBATCH --output=slurm-multiqc-%j.out
+#SBATCH --job-name=multiqc
+
 set -euo pipefail
+
+# Go to project root so relative paths work
+cd /fs/ess/PAS2880/users/bateman139/project   # <-- change if needed
 
 # Constants
 MULTIQC_CONTAINER=oras://community.wave.seqera.io/library/multiqc:1.31--e111a2e953475c51
 
-# Positional arguments: input files
-fastqc_file=$1
+#postional Parameters: 
+RAW_FASTQC_DIR=$1
+TRIMMED_FASTQC_FASTP_DIR=$2
+STAR_RESULTS_DIR=$3
+SAMTOOLS_RESULTS_DIR=$4
+SALMON_RESULTS_DIR=$5
+OUTDIR=$6
 
-# Output base directory
-OUT=/fs/ess/PAS2880/users/bateman139/project/data
-
-nopath1=${fastqc_file##*/} 
+#%date for file name 
+run_date=$(date +%m%d)
 
 # Initial logging
 echo "# Starting script multiqc.sh"
 date
-echo "# Input dir:                      $fastqc_file"
-echo "# Output file:                    $OUT/multiqc"
+echo "# Inputs:                         raw fastqc, trimmed fastqc, STAR results, samtools results"
+echo "# Output dir:                     $OUTDIR"
 echo
 
-# Create the output dir (with a subdir for Slurm logs)
-mkdir -p "$OUT/multiqc"
+# Create the output dir
+mkdir -p "$OUTDIR"
 
 # Run MultiQC
 apptainer exec "$MULTIQC_CONTAINER" multiqc \
-    --outdir "$OUT/multiqc/$nopath1" \
-    "$fastqc_file"
+    --outdir "$OUTDIR" \
+    "$RAW_FASTQC_DIR" \
+    "$TRIMMED_FASTQC_FASTP_DIR" \
+    "$STAR_RESULTS_DIR" \
+    "$SAMTOOLS_RESULTS_DIR" \
+    "$SALMON_RESULTS_DIR" \
+    --filename "full_multiqc_${run_date}.html"
 
 # Final logging
-echo
-echo "# Successfully finished script multiqc.sh with "$fastqc_file"
+echo "# Finished multiqc script"
 date
-
-

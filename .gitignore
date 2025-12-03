@@ -1,2 +1,11 @@
-data
+fastq
 ref
+scripts/eggnog.sh
+scripts/eggnog_download_db.sh
+scripts/Cp_Menuka's_scrpt_GBFF2GFF.sh
+sratoolkit.3.2.1-ubuntu64
+sratoolkit.tar.gz
+annotation
+dataformat 
+datasets
+

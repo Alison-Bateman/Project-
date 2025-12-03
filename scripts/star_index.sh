@@ -7,13 +7,13 @@
 #SBATCH --time=24:00:00
 set -euo pipefail
 
-# Constants
+# Container
 STAR_CONTAINER=oras://community.wave.seqera.io/library/star:2.7.11b--84fcc19fdfab53a4
 
-# Copy the placeholder variables
-fasta=ref/figshare/HelTub_1.0.fn
-gtf=ref/gtf/HelTub_1.0.gtf
-outdir=ref/index/logs
+# Positional arguments:
+FASTA_FILE=$1
+GTF_FILE=$2
+OUTDIR=$3
 
 # Initial logging
 echo "# Starting script star_index.sh"
@@ -37,7 +37,7 @@ apptainer exec "$STAR_CONTAINER" STAR \
     --genomeDir "$outdir" \
     --runThreadN 16
 
-# Explanation of key options:
+# Explanation of  options:
 #   --runMode genomeGenerate
 #       Build a genome index instead of aligning reads.
 #   --runThreadN 16
